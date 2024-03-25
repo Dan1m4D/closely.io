@@ -1,22 +1,23 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
 import 'package:sensors_plus/sensors_plus.dart';
 
-class AccelPage extends StatefulWidget {
-  const AccelPage({Key? key});
+class GesturePage extends StatefulWidget {
+  const GesturePage({super.key});
 
   @override
-  State<AccelPage> createState() => _AccelPageState();
+  State<GesturePage> createState() => _GesturePageState();
 }
 
-class _AccelPageState extends State<AccelPage> {
+class _GesturePageState extends State<GesturePage> {
   double _x = 0;
   double _y = 0;
   double _z = 0;
   double _max_x = 0;
   double _max_y = 0;
   double _max_z = 0;
+
+  final bool _show = false;
   static const double threshold = 25;
   int _shakeCount = 0;
   StreamSubscription? _streamSubscription;
@@ -64,8 +65,10 @@ class _AccelPageState extends State<AccelPage> {
     if (event.x.abs() > threshold) {
       countShakes();
       if (!_isShaking && _shakeCount > 2) {
-        _isShaking = true;
-        _shakeCount = 0;
+        setState(() {
+          _isShaking = true;
+          _shakeCount = 0;
+        });
         showDialog(
           context: context,
           builder: (context) {
@@ -76,9 +79,13 @@ class _AccelPageState extends State<AccelPage> {
                 TextButton(
                   onPressed: () {
                     Navigator.of(context).pop();
-                    _isShaking = false;
+                    setState(() {
+                      _isShaking = false;
+                    });
                   },
-                  child: const Text("OK"),
+                  child: const Text(
+                    "OK",
+                  ),
                 ),
               ],
             );
@@ -94,19 +101,24 @@ class _AccelPageState extends State<AccelPage> {
     String y = _y.toStringAsFixed(1);
     String z = _z.toStringAsFixed(1);
 
-    String max_x = _max_x.toStringAsFixed(1);
-    String max_y = _max_y.toStringAsFixed(1);
-    String max_z = _max_z.toStringAsFixed(1);
+    String maxX = _max_x.toStringAsFixed(1);
+    String maxY = _max_y.toStringAsFixed(1);
+    String maxZ = _max_z.toStringAsFixed(1);
+
+    bool show = _show;
 
     return Scaffold(
-      backgroundColor: Colors.white, // Initial background color
+      appBar: AppBar(
+        title: const Text("G E S T U R E S"),
+        centerTitle: true,
+      ),
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text("X: $x; Max: $max_x"),
-            Text("Y: $y; Max: $max_y"),
-            Text("Z: $z; Max: $max_z"),
+            Text("X: $x; Max: $maxX"),
+            Text("Y: $y; Max: $maxY"),
+            Text("Z: $z; Max: $maxZ"),
             Text("Shake count: $_shakeCount"),
             ButtonBar(
               alignment: MainAxisAlignment.center,
@@ -122,6 +134,12 @@ class _AccelPageState extends State<AccelPage> {
                   },
                   child: const Text("Reset max values"),
                 ),
+                ElevatedButton(
+                  onPressed: () {
+                    show = true;
+                  },
+                  child: const Text("Show dialog"),
+                ),
               ],
             ),
           ],
@@ -129,10 +147,4 @@ class _AccelPageState extends State<AccelPage> {
       ),
     );
   }
-}
-
-void main() {
-  runApp(const MaterialApp(
-    home: AccelPage(),
-  ));
 }

@@ -38,6 +38,8 @@ dependencies:
   sensors_plus: ^4.0.2
   flutter_nearby_connections: ^1.1.2
   provider: ^6.1.2
+  nearby_connections: ^4.0.1
+  hive: ^2.2.3
 
 dev_dependencies:
   flutter_test:

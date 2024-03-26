@@ -12,12 +12,20 @@ class HomePage extends StatelessWidget {
         title: const Text('Home Page'),
       ),
       drawer: const AppDrawer(),
-      body: const Center(
-        child: Column(
-          children: [
-            Text('Welcome to the Home Page'),
-            
-          ],
+      body: Center(
+        child: Form(
+          key: const Key('form'),
+          child: Column(
+            children: [
+              const Text('Welcome to Closely.io'),
+              TextFormField(
+                decoration: const InputDecoration(
+                  labelText: 'Enter your name',
+                ),
+              ),
+
+              ],
+          ),
         ),
       ),
     );

@@ -1,5 +1,6 @@
 import 'package:closely_io/pages/gesturePage.dart';
 import 'package:closely_io/pages/homePage.dart';
+import 'package:closely_io/pages/loginPage.dart';
 import 'package:closely_io/pages/settingsPage.dart';
 import 'package:closely_io/providers/themeProvider.dart';
 import 'package:flutter/material.dart';
@@ -29,7 +30,8 @@ class MyApp extends StatelessWidget {
         themeMode: ThemeMode.system,
         initialRoute: '/',
         routes: {
-          '/': (context) => const HomePage(),
+          '/': (context) => const LoginPage(),
+          '/home': (context) => const HomePage(),
           '/gesture': (context) => const GesturePage(),
           '/settings': (context) => const SettingsPage(),
         });

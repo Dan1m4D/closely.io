@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:lottie/lottie.dart';
 
 class LoadingPage extends StatelessWidget {
   const LoadingPage({super.key});
@@ -22,19 +23,16 @@ class LoadingPage extends StatelessWidget {
       });
     }
 
-    return const Scaffold(
+    return Scaffold(
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            CircularProgressIndicator(),
-            SizedBox(height: 20),
-            Text(
-              'Fetching data',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
+            Lottie.asset('assets/lottie/loading.json', width: 400, height: 400),
+            const SizedBox(height: 20),
+            const Text(
+              'Loading...',
+              style: TextStyle(fontSize: 30),
             ),
           ],
         ),

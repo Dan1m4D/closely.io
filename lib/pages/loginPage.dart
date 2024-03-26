@@ -1,6 +1,6 @@
-import 'package:flutter/cupertino.dart';
+import 'package:closely_io/components/FadeTransition.dart';
+import 'package:closely_io/pages/homePage.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 
@@ -115,7 +115,10 @@ class _LoginPageState extends State<LoginPage> {
                     if (_formKey.currentState!.validate()) {
                       addUser(_textController.text);
                       _started.value = true;
-                      Navigator.pushReplacementNamed(context, '/home');
+                      Navigator.pushReplacement(
+                        context,
+                        FadeInRoute(page: const HomePage(), routeName: "/home"),
+                      );
                     }
                   },
                   child: const Padding(
@@ -125,7 +128,6 @@ class _LoginPageState extends State<LoginPage> {
                 )
                     .animate(
                       onPlay: (controller) => controller.repeat(),
-                      adapter: ValueAdapter(_started.value ? 1.0 : 0.0),
                     )
                     .shimmer(
                       duration: const Duration(seconds: 1),

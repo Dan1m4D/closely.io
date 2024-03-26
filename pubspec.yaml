@@ -43,6 +43,7 @@ dependencies:
   hive_flutter: ^1.1.0
   flutter_animate: ^4.5.0
   lottie: ^3.1.0
+  permission_handler: ^11.3.0
 
 dev_dependencies:
   flutter_test:
@@ -72,6 +73,7 @@ flutter:
   #   - images/a_dot_ham.jpeg
   assets:
     - assets/lottie/
+    - assets/images/
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/assets-and-images/#resolution-aware

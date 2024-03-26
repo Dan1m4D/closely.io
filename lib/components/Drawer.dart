@@ -4,26 +4,27 @@ import 'package:hive_flutter/hive_flutter.dart';
 
 class AppDrawer extends StatelessWidget {
   const AppDrawer({super.key});
-  
+
   @override
   Widget build(BuildContext context) {
     var box = Hive.box('closely');
     final user = box.get('user', defaultValue: '');
     return Drawer(
-      backgroundColor: Theme.of(context).primaryColor,
+      backgroundColor: Theme.of(context).colorScheme.background,
       child: Column(
         children: [
           DrawerHeader(
-            child: Column(
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
-                const CircleAvatar(
-                  radius: 40,
-                  backgroundImage: AssetImage('assets/images/logo.png'),
+                const Image(
+                  image: AssetImage('assets/images/logo.png'),
+                  height: 90,
                 ),
                 Text(
-                  user,
-                  style: const TextStyle(
-                    color: Colors.white,
+                  "Welcome,\n$user",
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onBackground,
                     fontSize: 24,
                   ),
                 ),
@@ -32,8 +33,15 @@ class AppDrawer extends StatelessWidget {
           ),
           MenuItem(
             child: ListTile(
-              leading: const Icon(Icons.home),
-              title: const Text('Home'),
+              leading: Icon(
+                Icons.home,
+                color: Theme.of(context).colorScheme.onBackground,
+              ),
+              title: Text(
+                'H O M E',
+                style: TextStyle(
+                    color: Theme.of(context).colorScheme.onBackground),
+              ),
               onTap: () {
                 Navigator.pop(context);
                 Navigator.of(context).pushReplacementNamed('/');
@@ -42,8 +50,15 @@ class AppDrawer extends StatelessWidget {
           ),
           MenuItem(
             child: ListTile(
-              leading: const Icon(Icons.gesture),
-              title: const Text('Gesture'),
+              leading: Icon(
+                Icons.gesture,
+                color: Theme.of(context).colorScheme.onBackground,
+              ),
+              title: Text(
+                'G E S T U R E S',
+                style: TextStyle(
+                    color: Theme.of(context).colorScheme.onBackground),
+              ),
               onTap: () {
                 Navigator.pop(context);
                 Navigator.of(context).pushNamed('/gesture');
@@ -52,8 +67,15 @@ class AppDrawer extends StatelessWidget {
           ),
           MenuItem(
             child: ListTile(
-              leading: const Icon(Icons.settings),
-              title: const Text('Settings'),
+              leading: Icon(
+                Icons.settings,
+                color: Theme.of(context).colorScheme.onBackground,
+              ),
+              title: Text(
+                'S E T T I N G S',
+                style: TextStyle(
+                    color: Theme.of(context).colorScheme.onBackground),
+              ),
               onTap: () {
                 Navigator.pop(context);
                 Navigator.of(context).pushNamed('/settings');

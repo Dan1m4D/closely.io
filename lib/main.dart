@@ -4,11 +4,21 @@ import 'package:closely_io/pages/loginPage.dart';
 import 'package:closely_io/pages/settingsPage.dart';
 import 'package:closely_io/providers/themeProvider.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
+import 'package:hive_flutter/adapters.dart';
 import 'package:provider/provider.dart';
 
-import 'theme/color_schemes.g.dart';
+void main() async {
+  // initialize hive
+  await Hive.initFlutter();
 
-void main() {
+  // open the box
+  await Hive.openBox('closely');
+
+  // testing purposes
+  Animate.restartOnHotReload;
+
+  // register the adapter
   runApp(
     ChangeNotifierProvider(
       create: (context) => ThemeProvider(),
@@ -16,6 +26,12 @@ void main() {
     ),
   );
 }
+
+// verify if user exists
+  bool userExists() {
+    var _box = Hive.box('closely');
+    return _box.containsKey('user');
+  }
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});

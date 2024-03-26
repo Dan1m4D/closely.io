@@ -112,9 +112,11 @@ class _LoginPageState extends State<LoginPage> {
                 valueListenable: _started,
                 builder: (context, value, child) => ElevatedButton(
                   onPressed: () {
-                    addUser(_textController.text);
-                    _started.value = true;
-                    Navigator.pushReplacementNamed(context, '/home');
+                    if (_formKey.currentState!.validate()) {
+                      addUser(_textController.text);
+                      _started.value = true;
+                      Navigator.pushReplacementNamed(context, '/home');
+                    }
                   },
                   child: const Padding(
                     padding: EdgeInsets.all(8.0),
@@ -123,6 +125,7 @@ class _LoginPageState extends State<LoginPage> {
                 )
                     .animate(
                       onPlay: (controller) => controller.repeat(),
+                      adapter: ValueAdapter(_started.value ? 1.0 : 0.0),
                     )
                     .shimmer(
                       duration: const Duration(seconds: 1),

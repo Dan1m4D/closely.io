@@ -38,7 +38,7 @@ class SettingsPage extends StatelessWidget {
               onTap: () {
                 _box.delete('user');
                 Navigator.pop(context);
-                Navigator.of(context).pushReplacementNamed('/');
+                Navigator.of(context).pushReplacementNamed('/login');
               },
               title: const Row(
                 mainAxisAlignment: MainAxisAlignment.start,

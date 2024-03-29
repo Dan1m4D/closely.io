@@ -6,6 +6,8 @@ import 'package:closely_io/components/layout/Drawer.dart';
 import 'package:closely_io/components/layout/Hero.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 
+import 'chatPage.dart';
+
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
 
@@ -133,52 +135,6 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-  Future<void> _requestConnection(String id) async {
-    try {
-      await Nearby().requestConnection(
-        userName,
-        id,
-        onConnectionInitiated: (id, info) {
-          // Handle connection initiation
-          _acceptConnection(id); // Accept connection when initiated
-        },
-        onConnectionResult: (id, status) {
-          // Called when connection is accepted/rejected
-          if (status == Status.CONNECTED) {
-            print('Connection accepted with $id');
-            // Handle connection acceptance if needed
-          } else {
-            print('Connection rejected with $id');
-            // Handle connection rejection if needed
-          }
-        },
-        onDisconnected: (id) {
-          // Called whenever a connection is disconnected
-          print('Disconnected from $id');
-        },
-      );
-    } catch (exception) {
-      print('Connection Request Error: $exception');
-      // Handle platform exceptions like unable to request connection
-    }
-  }
-
-  Future<void> _acceptConnection(String id) async {
-    try {
-      await Nearby().acceptConnection(
-        id,
-        onPayLoadRecieved: (endid, payload) {
-          // Handle payload received
-        },
-        onPayloadTransferUpdate: (endid, payloadTransferUpdate) {
-          // Handle payload transfer update
-        },
-      );
-    } catch (exception) {
-      print('Accept Connection Error: $exception');
-      // Handle platform exceptions like unable to accept connection
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -209,9 +165,17 @@ class _HomePageState extends State<HomePage> {
                 return ListTile(
                   title: Text(endpointName),
                   // Add onTap function to handle connection to the selected device
-                  //onTap: () {
-                  // _requestConnection(nearbyDevices[index]);
-                  //},
+                  onTap: () {
+                    Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => ChatPage(device: endpointName, endpointId: key),
+                    )
+                  );
+
+                    
+                    
+                    },
                 );
               },
             ),

@@ -4,16 +4,19 @@ import 'package:nearby_connections/nearby_connections.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:closely_io/components/layout/Drawer.dart';
 import 'package:closely_io/components/layout/Hero.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 
 class HomePage extends StatefulWidget {
-  const HomePage({Key? key}) : super(key: key);
+  const HomePage({super.key});
 
   @override
   State<HomePage> createState() => _HomePageState();
 }
 
 class _HomePageState extends State<HomePage> {
-  late String userName = 'xiaomi'; // Replace with your username
+  final box = Hive.box('closely');
+  late String userName = box.get('user', defaultValue: ''); // Replace with your username
+  
   late Strategy strategy = Strategy.P2P_STAR; // Adjust strategy as needed
   Map<String, ConnectionInfo> endpointMap = {};
 
@@ -201,8 +204,10 @@ class _HomePageState extends State<HomePage> {
             child: ListView.builder(
               itemCount: endpointMap.length,
               itemBuilder: (context, index) {
+                final key = endpointMap.keys.elementAt(index);
+                final String endpointName = endpointMap[key]!.endpointName;
                 return ListTile(
-                  title: Text(endpointMap.values.elementAt(index) as String),
+                  title: Text(endpointName),
                   // Add onTap function to handle connection to the selected device
                   //onTap: () {
                   // _requestConnection(nearbyDevices[index]);

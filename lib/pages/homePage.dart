@@ -1,24 +1,32 @@
-import 'package:closely_io/components/layout/Drawer.dart';
-import 'package:closely_io/components/layout/Hero.dart';
 import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:nearby_connections/nearby_connections.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:closely_io/components/layout/Drawer.dart';
+import 'package:closely_io/components/layout/Hero.dart';
 
 class HomePage extends StatefulWidget {
-  const HomePage({super.key});
+  const HomePage({Key? key}) : super(key: key);
 
   @override
   State<HomePage> createState() => _HomePageState();
 }
 
 class _HomePageState extends State<HomePage> {
+  late String userName = 'xiaomi'; // Replace with your username
+  late Strategy strategy = Strategy.P2P_STAR; // Adjust strategy as needed
+  Map<String, ConnectionInfo> endpointMap = {};
+
+  //String? tempFileUri; //reference to the file currently being transferred
+  Map<int, String> map = {};
+
+  //List<String> nearbyDevices = [];
 
   Future<void> _askPermissions() async {
-    // location permission
+    // Location permission
     await Permission.location.isGranted; // Check
     await Permission.location.request(); // Ask
-    
 
-    // Bluetooth permissions
     bool granted = !(await Future.wait([
       // Check
       Permission.bluetooth.isGranted,
@@ -39,20 +47,246 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
+    _askPermissions();
+  }
+
+  Future<void> _startDiscovery() async {
+    try {
+      bool a = await Nearby().startDiscovery(
+        userName,
+        strategy,
+        onEndpointFound: (id, name, serviceId) {
+          // show sheet automatically to request connection
+          showModalBottomSheet(
+            context: context,
+            builder: (builder) {
+              return Center(
+                child: Column(
+                  children: <Widget>[
+                    Text("id: $id"),
+                    Text("Name: $name"),
+                    Text("ServiceId: $serviceId"),
+                    ElevatedButton(
+                      child: const Text("Request Connection"),
+                      onPressed: () {
+                        Navigator.pop(context);
+                        Nearby().requestConnection(
+                          userName,
+                          id,
+                          onConnectionInitiated: (id, info) {
+                            onConnectionInit(id, info);
+                          },
+                          onConnectionResult: (id, status) {
+                            showSnackbar(status);
+                          },
+                          onDisconnected: (id) {
+                            setState(() {
+                              endpointMap.remove(id);
+                            });
+                            showSnackbar(
+                                "Disconnected from: ${endpointMap[id]!.endpointName}, id $id");
+                          },
+                        );
+                      },
+                    ),
+                  ],
+                ),
+              );
+            },
+          );
+        },
+        onEndpointLost: (id) {
+          showSnackbar(
+              "Lost discovered Endpoint: ${endpointMap[id]?.endpointName}, id $id");
+        },
+      );
+      showSnackbar("DISCOVERING: $a");
+    } catch (exception) {
+      print('Discovery Error: $exception');
+      // Handle platform exceptions like unable to start Bluetooth or insufficient permissions
+    }
+  }
+
+  Future<void> _startAdvertising() async {
+    try {
+      bool a = await Nearby().startAdvertising(
+        userName,
+        strategy,
+        onConnectionInitiated: onConnectionInit,
+        onConnectionResult: (id, status) {
+          showSnackbar(status);
+        },
+        onDisconnected: (id) {
+          showSnackbar(
+              "Disconnected: ${endpointMap[id]!.endpointName}, id $id");
+          setState(() {
+            endpointMap.remove(id);
+          });
+        },
+      );
+    } catch (exception) {
+      print('Advertising Error: $exception');
+      // Handle platform exceptions like unable to start Bluetooth or insufficient permissions
+    }
+  }
+
+  Future<void> _requestConnection(String id) async {
+    try {
+      await Nearby().requestConnection(
+        userName,
+        id,
+        onConnectionInitiated: (id, info) {
+          // Handle connection initiation
+          _acceptConnection(id); // Accept connection when initiated
+        },
+        onConnectionResult: (id, status) {
+          // Called when connection is accepted/rejected
+          if (status == Status.CONNECTED) {
+            print('Connection accepted with $id');
+            // Handle connection acceptance if needed
+          } else {
+            print('Connection rejected with $id');
+            // Handle connection rejection if needed
+          }
+        },
+        onDisconnected: (id) {
+          // Called whenever a connection is disconnected
+          print('Disconnected from $id');
+        },
+      );
+    } catch (exception) {
+      print('Connection Request Error: $exception');
+      // Handle platform exceptions like unable to request connection
+    }
+  }
+
+  Future<void> _acceptConnection(String id) async {
+    try {
+      await Nearby().acceptConnection(
+        id,
+        onPayLoadRecieved: (endid, payload) {
+          // Handle payload received
+        },
+        onPayloadTransferUpdate: (endid, payloadTransferUpdate) {
+          // Handle payload transfer update
+        },
+      );
+    } catch (exception) {
+      print('Accept Connection Error: $exception');
+      // Handle platform exceptions like unable to accept connection
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    _askPermissions();
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.background,
       appBar: AppBar(
         backgroundColor: Theme.of(context).colorScheme.primaryContainer,
       ),
       drawer: const AppDrawer(),
-      body: const Column(
-        children: [AppHero(), Text('Home Page')],
+      body: Column(
+        children: [
+          AppHero(),
+          ElevatedButton(
+            onPressed: _startDiscovery, // Start discovering nearby devices
+            child: const Text('Search Nearby Devices'),
+          ),
+          ElevatedButton(
+            onPressed: _startAdvertising, // Start advertising
+            child: const Text('Advertise My Device'),
+          ),
+          const Text('Nearby Devices:'),
+          Expanded(
+            child: ListView.builder(
+              itemCount: endpointMap.length,
+              itemBuilder: (context, index) {
+                return ListTile(
+                  title: Text(endpointMap.values.elementAt(index) as String),
+                  // Add onTap function to handle connection to the selected device
+                  //onTap: () {
+                  // _requestConnection(nearbyDevices[index]);
+                  //},
+                );
+              },
+            ),
+          ),
+        ],
       ),
+    );
+  }
+
+  void showSnackbar(dynamic a) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(a.toString()),
+    ));
+  }
+
+  void onConnectionInit(String id, ConnectionInfo info) {
+    showModalBottomSheet(
+      context: context,
+      builder: (builder) {
+        return Center(
+          child: Column(
+            children: <Widget>[
+              Text("id: $id"),
+              Text("Token: ${info.authenticationToken}"),
+              Text("Name${info.endpointName}"),
+              Text("Incoming: ${info.isIncomingConnection}"),
+              ElevatedButton(
+                child: const Text("Accept Connection"),
+                onPressed: () {
+                  Navigator.pop(context);
+                  setState(() {
+                    endpointMap[id] = info;
+                  });
+                  Nearby().acceptConnection(
+                    id,
+                    onPayLoadRecieved: (endid, payload) async {
+                      if (payload.type == PayloadType.BYTES) {
+                        String str = String.fromCharCodes(payload.bytes!);
+                        showSnackbar("$endid: $str");
+
+                        if (str.contains(':')) {
+                          // used for file payload as file payload is mapped as
+                          // payloadId:filename
+                          int payloadId = int.parse(str.split(':')[0]);
+                          String fileName = (str.split(':')[1]);
+                        }
+                      }
+                    },
+                    onPayloadTransferUpdate: (endid, payloadTransferUpdate) {
+                      if (payloadTransferUpdate.status ==
+                          PayloadStatus.IN_PROGRESS) {
+                        print(payloadTransferUpdate.bytesTransferred);
+                      } else if (payloadTransferUpdate.status ==
+                          PayloadStatus.FAILURE) {
+                        print("failed");
+                        showSnackbar("$endid: FAILED to transfer file");
+                      } else if (payloadTransferUpdate.status ==
+                          PayloadStatus.SUCCESS) {
+                        showSnackbar(
+                            "$endid success, total bytes = ${payloadTransferUpdate.totalBytes}");
+                      }
+                    },
+                  );
+                },
+              ),
+              ElevatedButton(
+                child: const Text("Reject Connection"),
+                onPressed: () async {
+                  Navigator.pop(context);
+                  try {
+                    await Nearby().rejectConnection(id);
+                  } catch (e) {
+                    showSnackbar(e);
+                  }
+                },
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 }

@@ -1,0 +1,28 @@
+{
+  // Use IntelliSense to learn about possible attributes.
+  // Hover to view descriptions of existing attributes.
+  // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+  "version": "0.2.0",
+  "configurations": [    
+    {
+      "name": "SAMSUNG A54",
+      "request": "launch",
+      "type": "dart",
+      "flutterMode": "profile",
+      "deviceId": "R5CW2384BTZ"
+    },
+    {
+      "name": "Moto E13",
+      "request": "launch",
+      "type": "dart",
+      "flutterMode": "release",
+      "deviceId": "ZY22GMXJGJ"
+    }
+  ],
+  "compounds": [
+    {
+      "name": "Run on 2 devices",
+      "configurations": ["SAMSUNG A54", "Moto E13"]
+    }
+  ]
+}

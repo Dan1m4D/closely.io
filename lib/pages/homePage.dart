@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:nearby_connections/nearby_connections.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'chatPage.dart';
@@ -10,7 +11,6 @@ import 'package:closely_io/components/layout/Hero.dart';
 import 'dart:convert';
 import 'dart:typed_data';
 
-
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
 
@@ -20,11 +20,13 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   final box = Hive.box('closely');
-  late String userName = box.get('user', defaultValue: ''); // Replace with your username
+  late String userName =
+      box.get('user', defaultValue: ''); // Replace with your username
   late Strategy strategy = Strategy.P2P_STAR; // Adjust strategy as needed
   Map<String, ConnectionInfo> endpointMap = {};
 
-  final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
+  late final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
+      FlutterLocalNotificationsPlugin();
 
   @override
   void initState() {
@@ -34,18 +36,23 @@ class _HomePageState extends State<HomePage> {
   }
 
   void _initializeLocalNotifications() async {
-    const AndroidInitializationSettings initializationSettingsAndroid = AndroidInitializationSettings('@mipmap/ic_launcher');
-    final InitializationSettings initializationSettings = InitializationSettings(android: initializationSettingsAndroid);
+    const AndroidInitializationSettings initializationSettingsAndroid =
+        AndroidInitializationSettings('@mipmap/ic_launcher');
+    final InitializationSettings initializationSettings =
+        InitializationSettings(android: initializationSettingsAndroid);
     await flutterLocalNotificationsPlugin.initialize(initializationSettings);
   }
 
   Future<void> _showNotification(String title, String body) async {
-    const AndroidNotificationDetails androidPlatformChannelSpecifics = AndroidNotificationDetails(
-      'your_channel_id', 'your_channel_name',
+    const AndroidNotificationDetails androidPlatformChannelSpecifics =
+        AndroidNotificationDetails(
+      'your_channel_id',
+      'your_channel_name',
       importance: Importance.max,
       priority: Priority.high,
     );
-    const NotificationDetails platformChannelSpecifics = NotificationDetails(android: androidPlatformChannelSpecifics);
+    const NotificationDetails platformChannelSpecifics =
+        NotificationDetails(android: androidPlatformChannelSpecifics);
     await flutterLocalNotificationsPlugin.show(
       0, // Notification ID
       title,
@@ -65,6 +72,7 @@ class _HomePageState extends State<HomePage> {
       Permission.bluetoothAdvertise.isGranted,
       Permission.bluetoothConnect.isGranted,
       Permission.bluetoothScan.isGranted,
+      Permission.nearbyWifiDevices.isGranted,
     ]))
         .any((element) => false);
     [
@@ -72,7 +80,8 @@ class _HomePageState extends State<HomePage> {
       Permission.bluetooth,
       Permission.bluetoothAdvertise,
       Permission.bluetoothConnect,
-      Permission.bluetoothScan
+      Permission.bluetoothScan,
+      Permission.nearbyWifiDevices,
     ].request();
   }
 
@@ -128,7 +137,11 @@ class _HomePageState extends State<HomePage> {
       );
       showSnackbar("DISCOVERING: $a");
     } catch (exception) {
-      print('Discovery Error: $exception');
+      showSnackbar('Discovery Error: $exception');
+      if (await Permission.nearbyWifiDevices.isDenied) {
+        Permission.nearbyWifiDevices.request();
+      }
+
       // Handle platform exceptions like unable to start Bluetooth or insufficient permissions
     }
   }
@@ -255,7 +268,7 @@ class _HomePageState extends State<HomePage> {
               itemCount: endpointMap.length,
               itemBuilder: (context, index) {
                 final key = endpointMap.keys.elementAt(index);
-                final String endpointName = endpointMap[key]!.endpointName;
+                late final String endpointName = endpointMap[key]!.endpointName;
                 return ListTile(
                   title: Text(endpointName),
                   // Add onTap function to handle connection to the selected device
@@ -263,7 +276,10 @@ class _HomePageState extends State<HomePage> {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => ChatPage(device: endpointName, endpointId: key),
+                        builder: (context) => ChatPage(
+                          device: endpointName,
+                          endpointId: key,
+                        ),
                       ),
                     );
                   },

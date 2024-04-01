@@ -5,6 +5,7 @@ import 'dart:typed_data';
 import 'package:closely_io/classes/chatMessage.dart';
 import 'package:closely_io/providers/gestureProvider.dart';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:nearby_connections/nearby_connections.dart';
 import 'package:provider/provider.dart';
 import 'package:sensors_plus/sensors_plus.dart';
@@ -34,7 +35,7 @@ class _ChatPageState extends State<ChatPage> {
   // shake detector
   late StreamSubscription<AccelerometerEvent> _accelerometerStreamSubscription;
 
-  @override
+   @override
   void initState() {
     super.initState();
     _initializeLocalNotifications();
@@ -111,6 +112,14 @@ class _ChatPageState extends State<ChatPage> {
         return Scaffold(
           appBar: AppBar(
             title: Text('Chat with ${widget.device}'),
+            actions: [
+              IconButton(
+                icon: Icon(Icons.delete),
+                onPressed: () {
+                  _clearChatHistory();
+                },
+              ),
+            ],
           ),
           body: Column(
             children: [
@@ -120,33 +129,58 @@ class _ChatPageState extends State<ChatPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: _messages.map((message) {
-                      return Padding(
-                        padding: const EdgeInsets.symmetric(
-                            vertical: 4.0, horizontal: 8.0),
-                        child: Align(
-                          alignment: message.isSentByMe
-                              ? Alignment.centerRight
-                              : Alignment.centerLeft,
-                          child: Container(
-                            decoration: BoxDecoration(
-                              color: message.isSentByMe
-                                  ? Colors.blue
-                                  : Colors.grey[300],
-                              borderRadius: BorderRadius.circular(8.0),
-                            ),
-                            padding: const EdgeInsets.all(8.0),
-                            child: Text(
-                              message.text,
-                              style: TextStyle(
+                      if (message.imageBytes != null) {
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(
+                              vertical: 4.0, horizontal: 8.0),
+                          child: Align(
+                            alignment: message.isSentByMe
+                                ? Alignment.centerRight
+                                : Alignment.centerLeft,
+                            child: Container(
+                              decoration: BoxDecoration(
                                 color: message.isSentByMe
-                                    ? Colors.white
-                                    : Colors.black,
-                                fontFamily: "",
+                                    ? Colors.blue
+                                    : Colors.grey[300],
+                                borderRadius: BorderRadius.circular(8.0),
+                              ),
+                              padding: const EdgeInsets.all(8.0),
+                              child: Image.memory(
+                                message.imageBytes!,
+                                fit: BoxFit.cover,
                               ),
                             ),
                           ),
-                        ),
-                      );
+                        );
+                      } else {
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(
+                              vertical: 4.0, horizontal: 8.0),
+                          child: Align(
+                            alignment: message.isSentByMe
+                                ? Alignment.centerRight
+                                : Alignment.centerLeft,
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: message.isSentByMe
+                                    ? Colors.blue
+                                    : Colors.grey[300],
+                                borderRadius: BorderRadius.circular(8.0),
+                              ),
+                              padding: const EdgeInsets.all(8.0),
+                              child: Text(
+                                message.text!,
+                                style: TextStyle(
+                                  color: message.isSentByMe
+                                      ? Colors.white
+                                      : Colors.black,
+                                  fontFamily: "",
+                                ),
+                              ),
+                            ),
+                          ),
+                        );
+                      }
                     }).toList(),
                   ),
                 ),
@@ -169,6 +203,12 @@ class _ChatPageState extends State<ChatPage> {
                         _sendMessage();
                       },
                     ),
+                    IconButton(
+                      icon: const Icon(Icons.photo),
+                      onPressed: () {
+                        _sendImage();
+                      },
+                    ),
                   ],
                 ),
               ),
@@ -179,28 +219,52 @@ class _ChatPageState extends State<ChatPage> {
     );
   }
 
-  void _setupPayloadListener() {
-    try {
-      Nearby().acceptConnection(
-        widget.endpointId,
-        onPayLoadRecieved: (endid, payload) async {
-          if (payload.type == PayloadType.BYTES) {
+void _setupPayloadListener() {
+  try {
+    Nearby().acceptConnection(
+      widget.endpointId,
+      onPayLoadRecieved: (endid, payload) async {
+        if (payload.type == PayloadType.BYTES) {
+          if (_isImage(payload.bytes!)) {
+            setState(() {
+              _messages.add(ChatMessage(
+                imageBytes: payload.bytes!,
+                isSentByMe: false,
+              ));
+              _saveChatHistory(); 
+            });
+          } else {
             String receivedMessage = utf8.decode(payload.bytes!);
             setState(() {
-              _messages
-                  .add(ChatMessage(text: receivedMessage, isSentByMe: false));
-              _saveChatHistory(); // Save received message to local storage
+              _messages.add(ChatMessage(
+                text: receivedMessage,
+                isSentByMe: false,
+              ));
+              _saveChatHistory(); 
+              _showNotification('New Message', receivedMessage); 
             });
-            _showNotification(
-                'New Message', receivedMessage); // Show notification
           }
-        },
-        onPayloadTransferUpdate: (endid, payloadTransferUpdate) {},
-      );
-    } catch (exception) {
-      print(exception);
-    }
+        }
+      },
+      onPayloadTransferUpdate: (endid, payloadTransferUpdate) {},
+    );
+  } catch (exception) {
+    print(exception);
   }
+}
+
+bool _isImage(Uint8List bytes) {
+  return bytes.length >= 2 &&
+      bytes[0] == 0xFF &&
+      (bytes[1] == 0xD8 || // JPEG
+          bytes[1] == 0x89 || // PNG
+          bytes[1] == 0x47 || // GIF
+          bytes[1] == 0x49 || // TIFF
+          bytes[1] == 0x42); // BMP
+}
+
+
+
 
   void _sendMessage() {
     String message = _messageController.text.trim();
@@ -214,6 +278,20 @@ class _ChatPageState extends State<ChatPage> {
       );
       _saveChatHistory(); // Save sent message to local storage
       _messageController.clear();
+    }
+  }
+
+  void _sendImage() async {
+    final ImagePicker _picker = ImagePicker();
+    final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
+    if (image != null) {
+      Uint8List imageBytes = await image.readAsBytes();
+      Nearby().sendBytesPayload(widget.endpointId, imageBytes);
+      setState(() {
+        _messages.add(ChatMessage(
+            imageBytes: imageBytes, isSentByMe: true)); // Add sent image
+      });
+      _saveChatHistory(); // Save sent message to local storage
     }
   }
 
@@ -234,5 +312,13 @@ class _ChatPageState extends State<ChatPage> {
             .toList();
       });
     }
+  }
+
+  void _clearChatHistory() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.remove('chat_history');
+    setState(() {
+      _messages.clear();
+    });
   }
 }

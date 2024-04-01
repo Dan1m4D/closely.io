@@ -73,6 +73,7 @@ class _HomePageState extends State<HomePage> {
       Permission.bluetoothConnect.isGranted,
       Permission.bluetoothScan.isGranted,
       Permission.nearbyWifiDevices.isGranted,
+      Permission.storage.isGranted,
     ]))
         .any((element) => false);
     [
@@ -82,6 +83,7 @@ class _HomePageState extends State<HomePage> {
       Permission.bluetoothConnect,
       Permission.bluetoothScan,
       Permission.nearbyWifiDevices,
+      Permission.storage,
     ].request();
   }
 

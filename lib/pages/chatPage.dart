@@ -11,6 +11,7 @@ import 'package:provider/provider.dart';
 import 'package:sensors_plus/sensors_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:camera/camera.dart';
 
 class ChatPage extends StatefulWidget {
   final String device;
@@ -34,6 +35,7 @@ class _ChatPageState extends State<ChatPage> {
 
   // shake detector
   late StreamSubscription<AccelerometerEvent> _accelerometerStreamSubscription;
+  late CameraController _cameraController;
 
    @override
   void initState() {
@@ -41,6 +43,7 @@ class _ChatPageState extends State<ChatPage> {
     _initializeLocalNotifications();
     _setupPayloadListener();
     _loadChatHistory();
+    _initializeCamera();
     _accelerometerStreamSubscription =
         accelerometerEventStream().listen((event) {
       if (event.x.abs() > 1) {
@@ -56,6 +59,13 @@ class _ChatPageState extends State<ChatPage> {
   void dispose() {
     _accelerometerStreamSubscription.cancel();
     super.dispose();
+  }
+
+  void _initializeCamera() async {
+    final cameras = await availableCameras();
+    final firstCamera = cameras.first;
+    _cameraController = CameraController(firstCamera, ResolutionPreset.high);
+    await _cameraController.initialize();
   }
 
   void _initializeLocalNotifications() async {
@@ -282,8 +292,7 @@ bool _isImage(Uint8List bytes) {
   }
 
   void _sendImage() async {
-    final ImagePicker _picker = ImagePicker();
-    final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
+    final XFile? image = await _cameraController.takePicture();
     if (image != null) {
       Uint8List imageBytes = await image.readAsBytes();
       Nearby().sendBytesPayload(widget.endpointId, imageBytes);

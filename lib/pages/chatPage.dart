@@ -13,6 +13,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:camera/camera.dart';
 
+
 class ChatPage extends StatefulWidget {
   final String device;
   final String endpointId;
@@ -61,12 +62,6 @@ class _ChatPageState extends State<ChatPage> {
     super.dispose();
   }
 
-  void _initializeCamera() async {
-    final cameras = await availableCameras();
-    final firstCamera = cameras.first;
-    _cameraController = CameraController(firstCamera, ResolutionPreset.high);
-    await _cameraController.initialize();
-  }
 
   void _initializeLocalNotifications() async {
     const AndroidInitializationSettings initializationSettingsAndroid =
@@ -86,37 +81,39 @@ class _ChatPageState extends State<ChatPage> {
         0, title, body, platformChannelSpecifics);
   }
 
-  @override
+    @override
   Widget build(BuildContext context) {
     return Consumer<GestureProvider>(
       builder: (context, gestureProvider, child) {
         if (gestureProvider.isShaking) {
           showDialog(
-              context: context,
-              builder: (context) {
-                return AlertDialog(
-                  title: const Text('Shake detected'),
-                  content: const Text('Did you wave at your friend? 👋'),
-                  actions: [
-                    TextButton(
-                      onPressed: () {
-                        _messageController.text =
-                            'Your friend is waving at you! 👋';
-                        _sendMessage();
-                        gestureProvider.resetValues();
-                        Navigator.of(context).pop();
-                      },
-                      child: const Text('OK'),
-                    ),
-                    TextButton(
-                        onPressed: () {
-                          gestureProvider.resetValues();
-                          Navigator.of(context).pop();
-                        },
-                        child: const Text('Cancel')),
-                  ],
-                );
-              });
+            context: context,
+            builder: (context) {
+              return AlertDialog(
+                title: const Text('Shake detected'),
+                content: const Text('Did you wave at your friend? 👋'),
+                actions: [
+                  TextButton(
+                    onPressed: () {
+                      _messageController.text =
+                          'Your friend is waving at you! 👋';
+                      _sendMessage();
+                      gestureProvider.resetValues();
+                      Navigator.of(context).pop();
+                    },
+                    child: const Text('OK'),
+                  ),
+                  TextButton(
+                    onPressed: () {
+                      gestureProvider.resetValues();
+                      Navigator.of(context).pop();
+                    },
+                    child: const Text('Cancel'),
+                  ),
+                ],
+              );
+            },
+          );
         }
 
         return Scaffold(
@@ -184,7 +181,6 @@ class _ChatPageState extends State<ChatPage> {
                                   color: message.isSentByMe
                                       ? Colors.white
                                       : Colors.black,
-                                  fontFamily: "",
                                 ),
                               ),
                             ),
@@ -216,7 +212,7 @@ class _ChatPageState extends State<ChatPage> {
                     IconButton(
                       icon: const Icon(Icons.photo),
                       onPressed: () {
-                        _sendImage();
+                        _openGallery();
                       },
                     ),
                   ],
@@ -229,52 +225,59 @@ class _ChatPageState extends State<ChatPage> {
     );
   }
 
-void _setupPayloadListener() {
-  try {
-    Nearby().acceptConnection(
-      widget.endpointId,
-      onPayLoadRecieved: (endid, payload) async {
-        if (payload.type == PayloadType.BYTES) {
-          if (_isImage(payload.bytes!)) {
-            setState(() {
-              _messages.add(ChatMessage(
-                imageBytes: payload.bytes!,
-                isSentByMe: false,
-              ));
-              _saveChatHistory(); 
-            });
-          } else {
-            String receivedMessage = utf8.decode(payload.bytes!);
-            setState(() {
-              _messages.add(ChatMessage(
-                text: receivedMessage,
-                isSentByMe: false,
-              ));
-              _saveChatHistory(); 
-              _showNotification('New Message', receivedMessage); 
-            });
-          }
-        }
-      },
-      onPayloadTransferUpdate: (endid, payloadTransferUpdate) {},
-    );
-  } catch (exception) {
-    print(exception);
+  void _initializeCamera() async {
+    final cameras = await availableCameras();
+    //final firstCamera = cameras.first;
+    final frontCamera = cameras.last;
+    _cameraController = CameraController(frontCamera, ResolutionPreset.high);
+    
+
+    await _cameraController.initialize();
   }
-}
 
-bool _isImage(Uint8List bytes) {
-  return bytes.length >= 2 &&
-      bytes[0] == 0xFF &&
-      (bytes[1] == 0xD8 || // JPEG
-          bytes[1] == 0x89 || // PNG
-          bytes[1] == 0x47 || // GIF
-          bytes[1] == 0x49 || // TIFF
-          bytes[1] == 0x42); // BMP
-}
+  void _setupPayloadListener() {
+    try {
+      Nearby().acceptConnection(
+        widget.endpointId,
+        onPayLoadRecieved: (endid, payload) async {
+          if (payload.type == PayloadType.BYTES) {
+            if (_isImage(payload.bytes!)) {
+              setState(() {
+                _messages.add(ChatMessage(
+                  imageBytes: payload.bytes!,
+                  isSentByMe: false,
+                ));
+                _saveChatHistory();
+              });
+            } else {
+              String receivedMessage = utf8.decode(payload.bytes!);
+              setState(() {
+                _messages.add(ChatMessage(
+                  text: receivedMessage,
+                  isSentByMe: false,
+                ));
+                _saveChatHistory();
+                _showNotification('New Message', receivedMessage);
+              });
+            }
+          }
+        },
+        onPayloadTransferUpdate: (endid, payloadTransferUpdate) {},
+      );
+    } catch (exception) {
+      print(exception);
+    }
+  }
 
-
-
+  bool _isImage(Uint8List bytes) {
+    return bytes.length >= 2 &&
+        bytes[0] == 0xFF &&
+        (bytes[1] == 0xD8 || // JPEG
+            bytes[1] == 0x89 || // PNG
+            bytes[1] == 0x47 || // GIF
+            bytes[1] == 0x49 || // TIFF
+            bytes[1] == 0x42); // BMP
+  }
 
   void _sendMessage() {
     String message = _messageController.text.trim();
@@ -291,9 +294,52 @@ bool _isImage(Uint8List bytes) {
     }
   }
 
-  void _sendImage() async {
-    final XFile? image = await _cameraController.takePicture();
-    if (image != null) {
+void _openGallery() {
+  if (!_cameraController.value.isInitialized) {
+    return;
+  }
+  final double aspectRatio = _cameraController.value.aspectRatio;
+  final double screenHeight = MediaQuery.of(context).size.height;
+  final double screenWidth = MediaQuery.of(context).size.width;
+  final double dialogHeight = screenWidth / aspectRatio;
+
+  showDialog(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: Text("Camera Preview"),
+      content: SizedBox(
+        width: double.infinity,
+        height: dialogHeight,
+        child: AspectRatio(
+          aspectRatio: aspectRatio,
+          child: CameraPreview(_cameraController),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () {
+            Navigator.pop(context); // Fecha o diálogo sem capturar a imagem
+          },
+          child: Text("Cancel"),
+        ),
+        TextButton(
+          onPressed: () {
+            Navigator.pop(context); // Fecha o diálogo
+            _captureAndSendImage(); // Captura e envia a imagem
+          },
+          child: Text("Capture"),
+        ),
+      ],
+    ),
+  );
+}
+
+  void _captureAndSendImage() async {
+    try {
+      final XFile? image = await _cameraController.takePicture();
+      if (image == null) {
+        return;
+      }
       Uint8List imageBytes = await image.readAsBytes();
       Nearby().sendBytesPayload(widget.endpointId, imageBytes);
       setState(() {
@@ -301,6 +347,8 @@ bool _isImage(Uint8List bytes) {
             imageBytes: imageBytes, isSentByMe: true)); // Add sent image
       });
       _saveChatHistory(); // Save sent message to local storage
+    } catch (e) {
+      print("Error capturing and sending image: $e");
     }
   }
 

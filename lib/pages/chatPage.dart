@@ -40,6 +40,7 @@ class _ChatPageState extends State<ChatPage> {
   late CameraController _cameraController;
 
   final _box = Hive.box('closely');
+  late String user = _box.get('user');
 
   @override
   void initState() {
@@ -279,7 +280,7 @@ class _ChatPageState extends State<ChatPage> {
                   isSentByMe: false,
                 ));
                 _saveChatHistory();
-                _showNotification('New Message', receivedMessage);
+                _showNotification(user, receivedMessage);
               });
             }
           }

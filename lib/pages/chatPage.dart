@@ -4,9 +4,9 @@ import 'dart:typed_data';
 
 import 'package:closely_io/classes/chatMessage.dart';
 import 'package:closely_io/providers/gestureProvider.dart';
+import 'package:closely_io/providers/themeProvider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:nearby_connections/nearby_connections.dart';
 import 'package:provider/provider.dart';
 import 'package:sensors_plus/sensors_plus.dart';
@@ -94,7 +94,8 @@ class _ChatPageState extends State<ChatPage> {
                 actions: [
                   TextButton(
                     onPressed: () {
-                      sendWave();
+                      _messageController.text = 'wave_gesture_detected';
+                      _sendMessage();
                       gestureProvider.resetValues();
                       Navigator.of(context).pop();
                     },
@@ -142,9 +143,13 @@ class _ChatPageState extends State<ChatPage> {
                                 ? Alignment.centerRight
                                 : Alignment.centerLeft,
                             child: Container(
+                              constraints: BoxConstraints(
+                                maxWidth:
+                                    MediaQuery.of(context).size.width * 0.6,
+                              ),
                               decoration: BoxDecoration(
                                 color: message.isSentByMe
-                                    ? Colors.blue
+                                    ? Theme.of(context).colorScheme.primaryContainer
                                     : Colors.grey[300],
                                 borderRadius: BorderRadius.circular(8.0),
                               ),
@@ -165,21 +170,28 @@ class _ChatPageState extends State<ChatPage> {
                                 ? Alignment.centerRight
                                 : Alignment.centerLeft,
                             child: Container(
+                              constraints: BoxConstraints(
+                                maxWidth:
+                                    MediaQuery.of(context).size.width * 0.7,
+                              ),
                               decoration: BoxDecoration(
                                 color: message.isSentByMe
-                                    ? Colors.blue
+                                    ? Theme.of(context).colorScheme.primary
                                     : Colors.grey[300],
                                 borderRadius: BorderRadius.circular(8.0),
                               ),
                               padding: const EdgeInsets.all(8.0),
-                              child: Text(
-                                message.text!,
-                                style: TextStyle(
-                                  color: message.isSentByMe
-                                      ? Colors.white
-                                      : Colors.black,
-                                ),
-                              ),
+                              child: message.text! == "wave_gesture_detected"
+                                  ? Image.asset(
+                                      'assets/gifs/waving.gif') // Use Image.asset to display the GIF
+                                  : Text(
+                                      message.text!,
+                                      style: TextStyle(
+                                        color: message.isSentByMe
+                                            ? Colors.white
+                                            : Colors.black,
+                                      ),
+                                    ),
                             ),
                           ),
                         );
@@ -290,35 +302,34 @@ class _ChatPageState extends State<ChatPage> {
     }
   }
 
-void _openGallery() {
-  if (!_cameraController.value.isInitialized) {
-    return;
+  void _openGallery() {
+    if (!_cameraController.value.isInitialized) {
+      return;
+    }
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text("Camera Preview"),
+        content: CameraPreview(_cameraController),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context); // Fecha o diálogo sem capturar a imagem
+            },
+            child: Text("Cancel"),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context); // Fecha o diálogo
+              _captureAndSendImage(); // Captura e envia a imagem
+            },
+            child: Text("Capture"),
+          ),
+        ],
+      ),
+    );
   }
-
-
-  showDialog(
-    context: context,
-    builder: (context) => AlertDialog(
-      title: Text("Camera Preview"),
-      content: CameraPreview(_cameraController),
-      actions: [
-        TextButton(
-          onPressed: () {
-            Navigator.pop(context); // Fecha o diálogo sem capturar a imagem
-          },
-          child: Text("Cancel"),
-        ),
-        TextButton(
-          onPressed: () {
-            Navigator.pop(context); // Fecha o diálogo
-            _captureAndSendImage(); // Captura e envia a imagem
-          },
-          child: Text("Capture"),
-        ),
-      ],
-    ),
-  );
-}
 
   void _captureAndSendImage() async {
     try {
@@ -336,24 +347,6 @@ void _openGallery() {
     } catch (e) {
       print("Error capturing and sending image: $e");
     }
-  }
-
-  Future<Uint8List> convertAssetToUint8List(String assetPath) async {
-    final ByteData bytes = await rootBundle.load(assetPath);
-    final Uint8List list = bytes.buffer.asUint8List();
-    return list;
-  }
-
-  void sendWave() async {
-    Uint8List waveImage = await convertAssetToUint8List('assets/gifs/waving.gif');
-    Nearby().sendBytesPayload(widget.endpointId, waveImage);
-    setState(() {
-      _messages.add(ChatMessage(
-        imageBytes: waveImage,
-        isSentByMe: true,
-      ));
-    });
-    _saveChatHistory();
   }
 
   void _saveChatHistory() async {

@@ -298,23 +298,13 @@ void _openGallery() {
   if (!_cameraController.value.isInitialized) {
     return;
   }
-  final double aspectRatio = _cameraController.value.aspectRatio;
-  final double screenHeight = MediaQuery.of(context).size.height;
-  final double screenWidth = MediaQuery.of(context).size.width;
-  final double dialogHeight = screenWidth / aspectRatio;
+
 
   showDialog(
     context: context,
     builder: (context) => AlertDialog(
       title: Text("Camera Preview"),
-      content: SizedBox(
-        width: double.infinity,
-        height: dialogHeight,
-        child: AspectRatio(
-          aspectRatio: aspectRatio,
-          child: CameraPreview(_cameraController),
-        ),
-      ),
+      content: CameraPreview(_cameraController),
       actions: [
         TextButton(
           onPressed: () {

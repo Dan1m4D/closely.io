@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:nearby_connections/nearby_connections.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'chatPage.dart';
@@ -20,19 +21,30 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   final box = Hive.box('closely');
+  List<Position> marksCoords = [];
   late String userName =
       box.get('user', defaultValue: ''); // Replace with your username
   late Strategy strategy = Strategy.P2P_STAR; // Adjust strategy as needed
   Map<String, ConnectionInfo> endpointMap = {};
+  Position? position;
 
   late final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
       FlutterLocalNotificationsPlugin();
+
+  Future<Position> _getCurrentPosition() async {
+    return Geolocator.getCurrentPosition();
+  }
 
   @override
   void initState() {
     super.initState();
     _initializeLocalNotifications();
     _askPermissions();
+    _getCurrentPosition().then((value) {
+      setState(() {
+        position = value;
+      });
+    });
   }
 
   void _initializeLocalNotifications() async {
@@ -225,6 +237,15 @@ class _HomePageState extends State<HomePage> {
                       }
                     },
                   );
+
+                  String coordinates =
+                      "${position!.latitude}:${position!.longitude}";
+                  Nearby().sendBytesPayload(id, utf8.encode(coordinates));
+
+                  _showNotification(
+                    'Connection Accepted',
+                    'Connected to ${info.endpointName}',
+                  );
                 },
               ),
               ElevatedButton(
@@ -243,6 +264,58 @@ class _HomePageState extends State<HomePage> {
         );
       },
     );
+
+    Nearby().acceptConnection(
+      id,
+      onPayLoadRecieved: (endid, payload) async {
+        if (payload.type == PayloadType.BYTES) {
+          String str = String.fromCharCodes(payload.bytes!);
+          _addReceivedCoordinates(str);
+          showSnackbar("Received coordinates from $endid: $str");
+        }
+      },
+      onPayloadTransferUpdate: (endid, payloadTransferUpdate) {
+        if (payloadTransferUpdate.status == PayloadStatus.IN_PROGRESS) {
+          print(payloadTransferUpdate.bytesTransferred);
+        } else if (payloadTransferUpdate.status == PayloadStatus.FAILURE) {
+          print("failed");
+          showSnackbar("Failed to receive coordinates from $endid");
+        } else if (payloadTransferUpdate.status == PayloadStatus.SUCCESS) {
+          showSnackbar("Received coordinates successfully from $endid");
+        }
+      },
+    );
+  }
+
+  void _addReceivedCoordinates(String coordinates) {
+    Position receivedPosition = Position(
+      latitude: double.parse(coordinates.split(':')[0]),
+      longitude: double.parse(coordinates.split(':')[1]),
+      timestamp: DateTime.now(),
+      accuracy: 0.0,
+      altitude: 0.0,
+      heading: 0.0,
+      speed: 0.0,
+      speedAccuracy: 0.0,
+      altitudeAccuracy: 0.0,
+      headingAccuracy: 0.0,
+    );
+    setState(() {
+      marksCoords.add(receivedPosition);
+      // Store the updated list in Hive
+      box.put('marks', marksCoords);
+    });
+  }
+
+  // Function to load previously received coordinates from Hive
+  void _loadReceivedCoordinates() {
+    List<Position>? storedCoordinates =
+        box.get('marks', defaultValue: []);
+    if (storedCoordinates != null) {
+      setState(() {
+        marksCoords = List<Position>.from(storedCoordinates);
+      });
+    }
   }
 
   @override

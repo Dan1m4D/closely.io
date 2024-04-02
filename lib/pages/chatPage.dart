@@ -149,7 +149,9 @@ class _ChatPageState extends State<ChatPage> {
                               ),
                               decoration: BoxDecoration(
                                 color: message.isSentByMe
-                                    ? Theme.of(context).colorScheme.primaryContainer
+                                    ? Theme.of(context)
+                                        .colorScheme
+                                        .primaryContainer
                                     : Colors.grey[300],
                                 borderRadius: BorderRadius.circular(8.0),
                               ),
@@ -176,7 +178,9 @@ class _ChatPageState extends State<ChatPage> {
                               ),
                               decoration: BoxDecoration(
                                 color: message.isSentByMe
-                                    ? Theme.of(context).colorScheme.primary
+                                    ? Theme.of(context)
+                                        .colorScheme
+                                        .primaryContainer
                                     : Colors.grey[300],
                                 borderRadius: BorderRadius.circular(8.0),
                               ),
@@ -188,7 +192,9 @@ class _ChatPageState extends State<ChatPage> {
                                       message.text!,
                                       style: TextStyle(
                                         color: message.isSentByMe
-                                            ? Colors.white
+                                            ? Theme.of(context)
+                                                .colorScheme
+                                                .onPrimaryContainer
                                             : Colors.black,
                                       ),
                                     ),
@@ -201,14 +207,25 @@ class _ChatPageState extends State<ChatPage> {
                 ),
               ),
               Padding(
-                padding: const EdgeInsets.all(8.0),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 5.0, vertical: 15.0),
                 child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
+                    IconButton(
+                      icon: const Icon(Icons.camera_alt),
+                      onPressed: () {
+                        _openGallery();
+                      },
+                    ),
                     Expanded(
-                      child: TextField(
-                        controller: _messageController,
-                        decoration: const InputDecoration(
-                          hintText: 'Enter your message',
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 5.0),
+                        child: TextField(
+                          controller: _messageController,
+                          decoration: const InputDecoration(
+                            hintText: 'Enter your message',
+                          ),
                         ),
                       ),
                     ),
@@ -216,12 +233,6 @@ class _ChatPageState extends State<ChatPage> {
                       icon: const Icon(Icons.send),
                       onPressed: () {
                         _sendMessage();
-                      },
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.photo),
-                      onPressed: () {
-                        _openGallery();
                       },
                     ),
                   ],

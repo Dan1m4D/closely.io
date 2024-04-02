@@ -290,45 +290,35 @@ class _ChatPageState extends State<ChatPage> {
     }
   }
 
-  void _openGallery() {
-    if (!_cameraController.value.isInitialized) {
-      return;
-    }
-    final double aspectRatio = _cameraController.value.aspectRatio;
-    final double screenHeight = MediaQuery.of(context).size.height;
-    final double screenWidth = MediaQuery.of(context).size.width;
-    final double dialogHeight = screenWidth / aspectRatio;
-
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text("Camera Preview"),
-        content: SizedBox(
-          width: double.infinity,
-          height: dialogHeight,
-          child: AspectRatio(
-            aspectRatio: aspectRatio,
-            child: CameraPreview(_cameraController),
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context); // Fecha o diálogo sem capturar a imagem
-            },
-            child: Text("Cancel"),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context); // Fecha o diálogo
-              _captureAndSendImage(); // Captura e envia a imagem
-            },
-            child: Text("Capture"),
-          ),
-        ],
-      ),
-    );
+void _openGallery() {
+  if (!_cameraController.value.isInitialized) {
+    return;
   }
+
+
+  showDialog(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: Text("Camera Preview"),
+      content: CameraPreview(_cameraController),
+      actions: [
+        TextButton(
+          onPressed: () {
+            Navigator.pop(context); // Fecha o diálogo sem capturar a imagem
+          },
+          child: Text("Cancel"),
+        ),
+        TextButton(
+          onPressed: () {
+            Navigator.pop(context); // Fecha o diálogo
+            _captureAndSendImage(); // Captura e envia a imagem
+          },
+          child: Text("Capture"),
+        ),
+      ],
+    ),
+  );
+}
 
   void _captureAndSendImage() async {
     try {

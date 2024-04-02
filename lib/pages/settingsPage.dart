@@ -1,6 +1,7 @@
 import 'package:closely_io/providers/themeProvider.dart';
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:nearby_connections/nearby_connections.dart';
 import 'package:provider/provider.dart';
 
 class SettingsPage extends StatelessWidget {
@@ -37,6 +38,9 @@ class SettingsPage extends StatelessWidget {
             child: ListTile(
               onTap: () {
                 _box.delete('user');
+                Nearby().stopAllEndpoints();
+                Nearby().stopAdvertising();
+                Nearby().stopDiscovery();
                 Navigator.pop(context);
                 Navigator.of(context).pushReplacementNamed('/login');
               },

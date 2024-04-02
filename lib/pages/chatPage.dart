@@ -7,6 +7,7 @@ import 'package:closely_io/providers/gestureProvider.dart';
 import 'package:closely_io/providers/themeProvider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 import 'package:nearby_connections/nearby_connections.dart';
 import 'package:provider/provider.dart';
 import 'package:sensors_plus/sensors_plus.dart';
@@ -37,6 +38,8 @@ class _ChatPageState extends State<ChatPage> {
   // shake detector
   late StreamSubscription<AccelerometerEvent> _accelerometerStreamSubscription;
   late CameraController _cameraController;
+
+  final _box = Hive.box('closely');
 
   @override
   void initState() {
@@ -350,15 +353,15 @@ class _ChatPageState extends State<ChatPage> {
   }
 
   void _saveChatHistory() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
+    //SharedPreferences prefs = await SharedPreferences.getInstance();
     List<String> messagesJson =
         _messages.map((message) => json.encode(message.toJson())).toList();
-    await prefs.setStringList('chat_history', messagesJson);
+    _box.put(widget.endpointId, messagesJson);
   }
 
   Future<void> _loadChatHistory() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    List<String>? messagesJson = prefs.getStringList('chat_history');
+    //SharedPreferences prefs = await SharedPreferences.getInstance();
+    List<String>? messagesJson = _box.get(widget.endpointId);
     if (messagesJson != null) {
       setState(() {
         _messages = messagesJson
@@ -369,10 +372,11 @@ class _ChatPageState extends State<ChatPage> {
   }
 
   void _clearChatHistory() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    await prefs.remove('chat_history');
-    setState(() {
-      _messages.clear();
-    });
+    _box.delete(widget.endpointId);
+    //SharedPreferences prefs = await SharedPreferences.getInstance();
+    //await prefs.remove('chat_history');
+    //setState(() {
+    //  _messages.clear();
+    //});
   }
 }

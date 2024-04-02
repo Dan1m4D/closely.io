@@ -5,6 +5,7 @@ import 'dart:typed_data';
 import 'package:closely_io/classes/chatMessage.dart';
 import 'package:closely_io/providers/gestureProvider.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:nearby_connections/nearby_connections.dart';
 import 'package:provider/provider.dart';
@@ -12,7 +13,6 @@ import 'package:sensors_plus/sensors_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:camera/camera.dart';
-
 
 class ChatPage extends StatefulWidget {
   final String device;
@@ -38,7 +38,7 @@ class _ChatPageState extends State<ChatPage> {
   late StreamSubscription<AccelerometerEvent> _accelerometerStreamSubscription;
   late CameraController _cameraController;
 
-   @override
+  @override
   void initState() {
     super.initState();
     _initializeLocalNotifications();
@@ -62,7 +62,6 @@ class _ChatPageState extends State<ChatPage> {
     super.dispose();
   }
 
-
   void _initializeLocalNotifications() async {
     const AndroidInitializationSettings initializationSettingsAndroid =
         AndroidInitializationSettings('@mipmap/ic_launcher');
@@ -81,7 +80,7 @@ class _ChatPageState extends State<ChatPage> {
         0, title, body, platformChannelSpecifics);
   }
 
-    @override
+  @override
   Widget build(BuildContext context) {
     return Consumer<GestureProvider>(
       builder: (context, gestureProvider, child) {
@@ -95,9 +94,7 @@ class _ChatPageState extends State<ChatPage> {
                 actions: [
                   TextButton(
                     onPressed: () {
-                      _messageController.text =
-                          'Your friend is waving at you! 👋';
-                      _sendMessage();
+                      sendWave();
                       gestureProvider.resetValues();
                       Navigator.of(context).pop();
                     },
@@ -230,7 +227,6 @@ class _ChatPageState extends State<ChatPage> {
     //final firstCamera = cameras.first;
     final frontCamera = cameras.last;
     _cameraController = CameraController(frontCamera, ResolutionPreset.high);
-    
 
     await _cameraController.initialize();
   }
@@ -294,45 +290,45 @@ class _ChatPageState extends State<ChatPage> {
     }
   }
 
-void _openGallery() {
-  if (!_cameraController.value.isInitialized) {
-    return;
-  }
-  final double aspectRatio = _cameraController.value.aspectRatio;
-  final double screenHeight = MediaQuery.of(context).size.height;
-  final double screenWidth = MediaQuery.of(context).size.width;
-  final double dialogHeight = screenWidth / aspectRatio;
+  void _openGallery() {
+    if (!_cameraController.value.isInitialized) {
+      return;
+    }
+    final double aspectRatio = _cameraController.value.aspectRatio;
+    final double screenHeight = MediaQuery.of(context).size.height;
+    final double screenWidth = MediaQuery.of(context).size.width;
+    final double dialogHeight = screenWidth / aspectRatio;
 
-  showDialog(
-    context: context,
-    builder: (context) => AlertDialog(
-      title: Text("Camera Preview"),
-      content: SizedBox(
-        width: double.infinity,
-        height: dialogHeight,
-        child: AspectRatio(
-          aspectRatio: aspectRatio,
-          child: CameraPreview(_cameraController),
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text("Camera Preview"),
+        content: SizedBox(
+          width: double.infinity,
+          height: dialogHeight,
+          child: AspectRatio(
+            aspectRatio: aspectRatio,
+            child: CameraPreview(_cameraController),
+          ),
         ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context); // Fecha o diálogo sem capturar a imagem
+            },
+            child: Text("Cancel"),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context); // Fecha o diálogo
+              _captureAndSendImage(); // Captura e envia a imagem
+            },
+            child: Text("Capture"),
+          ),
+        ],
       ),
-      actions: [
-        TextButton(
-          onPressed: () {
-            Navigator.pop(context); // Fecha o diálogo sem capturar a imagem
-          },
-          child: Text("Cancel"),
-        ),
-        TextButton(
-          onPressed: () {
-            Navigator.pop(context); // Fecha o diálogo
-            _captureAndSendImage(); // Captura e envia a imagem
-          },
-          child: Text("Capture"),
-        ),
-      ],
-    ),
-  );
-}
+    );
+  }
 
   void _captureAndSendImage() async {
     try {
@@ -350,6 +346,24 @@ void _openGallery() {
     } catch (e) {
       print("Error capturing and sending image: $e");
     }
+  }
+
+  Future<Uint8List> convertAssetToUint8List(String assetPath) async {
+    final ByteData bytes = await rootBundle.load(assetPath);
+    final Uint8List list = bytes.buffer.asUint8List();
+    return list;
+  }
+
+  void sendWave() async {
+    Uint8List waveImage = await convertAssetToUint8List('assets/gifs/waving.gif');
+    Nearby().sendBytesPayload(widget.endpointId, waveImage);
+    setState(() {
+      _messages.add(ChatMessage(
+        imageBytes: waveImage,
+        isSentByMe: true,
+      ));
+    });
+    _saveChatHistory();
   }
 
   void _saveChatHistory() async {

@@ -48,7 +48,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      debugShowCheckedModeBanner: false,
+      debugShowCheckedModeBanner: true,
       title: 'Closely.io',
       theme: Provider.of<ThemeProvider>(context).theme,
       themeMode: ThemeMode.system,

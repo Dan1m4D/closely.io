@@ -49,7 +49,9 @@ class _MapPageState extends State<MapPage> {
                       initialCenter: LatLng(lat, long),
                       initialZoom: 20,
                       interactionOptions: const InteractionOptions(
-                        flags: InteractiveFlag.pinchZoom,
+                        flags: InteractiveFlag.pinchZoom |
+                            InteractiveFlag.doubleTapZoom |
+                            InteractiveFlag.drag,
                       ),
                     ),
                     children: [

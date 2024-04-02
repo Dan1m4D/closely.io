@@ -1,7 +1,7 @@
-import 'package:closely_io/pages/gesturePage.dart';
 import 'package:closely_io/pages/homePage.dart';
 import 'package:closely_io/pages/loadingPage.dart';
 import 'package:closely_io/pages/loginPage.dart';
+import 'package:closely_io/pages/mapPage.dart';
 import 'package:closely_io/pages/settingsPage.dart';
 import 'package:closely_io/providers/gestureProvider.dart';
 import 'package:closely_io/providers/themeProvider.dart';
@@ -57,7 +57,7 @@ class MyApp extends StatelessWidget {
         '/': (context) => const LoadingPage(),
         '/login': (context) => const LoginPage(),
         '/home': (context) => const HomePage(),
-        '/gesture': (context) => const GesturePage(),
+        '/map': (context) => const MapPage(),
         '/settings': (context) => const SettingsPage(),
       },
     );

@@ -51,17 +51,17 @@ class AppDrawer extends StatelessWidget {
           MenuItem(
             child: ListTile(
               leading: Icon(
-                Icons.gesture,
+                Icons.map,
                 color: Theme.of(context).colorScheme.onBackground,
               ),
               title: Text(
-                'G E S T U R E S',
+                'M A P',
                 style: TextStyle(
                     color: Theme.of(context).colorScheme.onBackground),
               ),
               onTap: () {
                 Navigator.pop(context);
-                Navigator.of(context).pushNamed('/gesture');
+                Navigator.of(context).pushNamed('/map');
               },
             ),
           ),

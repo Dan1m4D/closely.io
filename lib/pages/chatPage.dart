@@ -270,6 +270,7 @@ class _ChatPageState extends State<ChatPage> {
                   isSentByMe: false,
                 ));
                 _saveChatHistory();
+                _showNotification(widget.device, "Image received");
               });
             } else {
               String receivedMessage = utf8.decode(payload.bytes!);
@@ -279,7 +280,7 @@ class _ChatPageState extends State<ChatPage> {
                   isSentByMe: false,
                 ));
                 _saveChatHistory();
-                _showNotification('New Message', receivedMessage);
+                _showNotification(widget.device, receivedMessage);
               });
             }
           }
@@ -367,12 +368,12 @@ class _ChatPageState extends State<ChatPage> {
     //SharedPreferences prefs = await SharedPreferences.getInstance();
     List<String> messagesJson =
         _messages.map((message) => json.encode(message.toJson())).toList();
-    _box.put(widget.endpointId, messagesJson);
+    _box.put(widget.device, messagesJson);
   }
 
   Future<void> _loadChatHistory() async {
     //SharedPreferences prefs = await SharedPreferences.getInstance();
-    List<String>? messagesJson = _box.get(widget.endpointId);
+    List<String>? messagesJson = _box.get(widget.device);
     if (messagesJson != null) {
       setState(() {
         _messages = messagesJson
@@ -383,11 +384,11 @@ class _ChatPageState extends State<ChatPage> {
   }
 
   void _clearChatHistory() async {
-    _box.delete(widget.endpointId);
+    _box.delete(widget.device);
     //SharedPreferences prefs = await SharedPreferences.getInstance();
     //await prefs.remove('chat_history');
-    //setState(() {
-    //  _messages.clear();
-    //});
+    setState(() {
+      _messages.clear();
+    });
   }
 }

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:nearby_connections/nearby_connections.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
@@ -10,7 +9,6 @@ import 'package:closely_io/components/layout/Drawer.dart';
 import 'package:closely_io/components/layout/Hero.dart';
 
 import 'dart:convert';
-import 'dart:typed_data';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -21,7 +19,7 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   final box = Hive.box('closely');
-  List<Position> marksCoords = [];
+  List<String> marksCoords = [];
   late String userName =
       box.get('user', defaultValue: ''); // Replace with your username
   late Strategy strategy = Strategy.P2P_STAR; // Adjust strategy as needed
@@ -270,7 +268,11 @@ class _HomePageState extends State<HomePage> {
       onPayLoadRecieved: (endid, payload) async {
         if (payload.type == PayloadType.BYTES) {
           String str = String.fromCharCodes(payload.bytes!);
-          _addReceivedCoordinates(str);
+          print("====================================");
+          print('Received coordinates: $str');
+          print("info: $info.endpointName");
+          print("====================================");
+          _addReceivedCoordinates("${info.endpointName}:$str");
           showSnackbar("Received coordinates from $endid: $str");
         }
       },
@@ -288,20 +290,11 @@ class _HomePageState extends State<HomePage> {
   }
 
   void _addReceivedCoordinates(String coordinates) {
-    Position receivedPosition = Position(
-      latitude: double.parse(coordinates.split(':')[0]),
-      longitude: double.parse(coordinates.split(':')[1]),
-      timestamp: DateTime.now(),
-      accuracy: 0.0,
-      altitude: 0.0,
-      heading: 0.0,
-      speed: 0.0,
-      speedAccuracy: 0.0,
-      altitudeAccuracy: 0.0,
-      headingAccuracy: 0.0,
-    );
     setState(() {
-      marksCoords.add(receivedPosition);
+      marksCoords.add(coordinates);
+      print("====================================");
+      print('Received coordinates: $marksCoords');
+      print("====================================");
       // Store the updated list in Hive
       box.put('marks', marksCoords);
     });
@@ -309,11 +302,10 @@ class _HomePageState extends State<HomePage> {
 
   // Function to load previously received coordinates from Hive
   void _loadReceivedCoordinates() {
-    List<Position>? storedCoordinates =
-        box.get('marks', defaultValue: []);
+    List<String>? storedCoordinates = box.get('marks', defaultValue: []);
     if (storedCoordinates != null) {
       setState(() {
-        marksCoords = List<Position>.from(storedCoordinates);
+        marksCoords = List<String>.from(storedCoordinates);
       });
     }
   }

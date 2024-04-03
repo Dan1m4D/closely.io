@@ -123,15 +123,11 @@ class _HomePageState extends State<HomePage> {
                           onConnectionInitiated: (id, info) {
                             onConnectionInit(id, info);
                           },
-                          onConnectionResult: (id, status) {
-                            showSnackbar(status);
-                          },
+                          onConnectionResult: (id, status) {},
                           onDisconnected: (id) {
                             setState(() {
                               endpointMap.remove(id);
                             });
-                            showSnackbar(
-                                "Disconnected from: ${endpointMap[id]!.endpointName}, id $id");
                           },
                         );
                       },
@@ -147,9 +143,9 @@ class _HomePageState extends State<HomePage> {
               "Lost discovered Endpoint: ${endpointMap[id]?.endpointName}, id $id");
         },
       );
-      showSnackbar("DISCOVERING: $a");
+      showSnackbar("DISCOVERING: $a"); // SET STATE TO LOAD
     } catch (exception) {
-      showSnackbar('Discovery Error: $exception');
+      // showSnackbar('Discovery Error: $exception');
       if (await Permission.nearbyWifiDevices.isDenied) {
         Permission.nearbyWifiDevices.request();
       }
@@ -165,7 +161,6 @@ class _HomePageState extends State<HomePage> {
         strategy,
         onConnectionInitiated: onConnectionInit,
         onConnectionResult: (id, status) {
-          showSnackbar(status);
         },
         onDisconnected: (id) {
           showSnackbar(
@@ -176,7 +171,7 @@ class _HomePageState extends State<HomePage> {
         },
       );
     } catch (exception) {
-      print('Advertising Error: $exception');
+      //print('Advertising Error: $exception');
       // Handle platform exceptions like unable to start Bluetooth or insufficient permissions
     }
   }
@@ -210,7 +205,7 @@ class _HomePageState extends State<HomePage> {
                     onPayLoadRecieved: (endid, payload) async {
                       if (payload.type == PayloadType.BYTES) {
                         String str = String.fromCharCodes(payload.bytes!);
-                        showSnackbar("$endid: $str");
+                       // showSnackbar("$endid: $str");
 
                         if (str.contains(':')) {
                           // used for file payload as file payload is mapped as
@@ -227,11 +222,10 @@ class _HomePageState extends State<HomePage> {
                       } else if (payloadTransferUpdate.status ==
                           PayloadStatus.FAILURE) {
                         print("failed");
-                        showSnackbar("$endid: FAILED to transfer file");
                       } else if (payloadTransferUpdate.status ==
                           PayloadStatus.SUCCESS) {
-                        showSnackbar(
-                            "$endid success, total bytes = ${payloadTransferUpdate.totalBytes}");
+                        // showSnackbar(
+                            //"$endid success, total bytes = ${payloadTransferUpdate.totalBytes}");
                       }
                     },
                   );
@@ -253,7 +247,7 @@ class _HomePageState extends State<HomePage> {
                   try {
                     await Nearby().rejectConnection(id);
                   } catch (e) {
-                    showSnackbar(e);
+                    // showSnackbar(e);
                   }
                 },
               ),
@@ -273,7 +267,7 @@ class _HomePageState extends State<HomePage> {
           print("info: $info.endpointName");
           print("====================================");
           _addReceivedCoordinates("${info.endpointName}:$str");
-          showSnackbar("Received coordinates from $endid: $str");
+          // showSnackbar("Received coordinates from $endid: $str");
         }
       },
       onPayloadTransferUpdate: (endid, payloadTransferUpdate) {
@@ -281,9 +275,9 @@ class _HomePageState extends State<HomePage> {
           print(payloadTransferUpdate.bytesTransferred);
         } else if (payloadTransferUpdate.status == PayloadStatus.FAILURE) {
           print("failed");
-          showSnackbar("Failed to receive coordinates from $endid");
+          // showSnackbar("Failed to receive coordinates from $endid");
         } else if (payloadTransferUpdate.status == PayloadStatus.SUCCESS) {
-          showSnackbar("Received coordinates successfully from $endid");
+          // showSnackbar("Received coordinates successfully from $endid");
         }
       },
     );
@@ -320,36 +314,78 @@ class _HomePageState extends State<HomePage> {
       drawer: const AppDrawer(),
       body: Column(
         children: [
-          AppHero(),
-          ElevatedButton(
-            onPressed: _startDiscovery, // Start discovering nearby devices
-            child: const Text('Search Nearby Devices'),
+          const AppHero(),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              ElevatedButton(
+                onPressed: _startDiscovery, // Start discovering nearby devices
+                child: const Text(
+                  'Search',
+                  style: TextStyle(fontSize: 20),
+                ),
+              ),
+              ElevatedButton(
+                onPressed: _startAdvertising, // Start advertising
+                child: const Text(
+                  'Advertise',
+                  style: TextStyle(fontSize: 20),
+                ),
+              ),
+            ],
           ),
-          ElevatedButton(
-            onPressed: _startAdvertising, // Start advertising
-            child: const Text('Advertise My Device'),
+          Container(
+            margin: const EdgeInsets.all(10.0),
+            width: double.infinity,
+            padding: const EdgeInsets.all(8.0),
+            child: const Row(
+              mainAxisAlignment: MainAxisAlignment.start,
+              children: [
+                Text(
+                  'Nearby Devices',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
           ),
-          const Text('Nearby Devices:'),
           Expanded(
             child: ListView.builder(
               itemCount: endpointMap.length,
               itemBuilder: (context, index) {
                 final key = endpointMap.keys.elementAt(index);
                 late final String endpointName = endpointMap[key]!.endpointName;
-                return ListTile(
-                  title: Text(endpointName),
-                  // Add onTap function to handle connection to the selected device
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => ChatPage(
-                          device: endpointName,
-                          endpointId: key,
+                return Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        Theme.of(context).colorScheme.primaryContainer,
+                        Theme.of(context).colorScheme.background,
+                      ],
+                    ),
+                    borderRadius: BorderRadius.circular(10), // Border radius
+                  ),
+                  margin: EdgeInsets.symmetric(
+                      vertical: 5,
+                      horizontal: 10), // Margin around each ListTile
+                  child: ListTile(
+                    title: Text(endpointName),
+                    subtitle: Text(key),
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => ChatPage(
+                            device: endpointName,
+                            endpointId: key,
+                          ),
                         ),
-                      ),
-                    );
-                  },
+                      );
+                    },
+                  ),
                 );
               },
             ),

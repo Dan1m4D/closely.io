@@ -41,7 +41,6 @@ class _MapPageState extends State<MapPage> {
       setState(() {
         position = value;
         marksCoords.add('$user:${position.latitude}:${position.longitude}');
-
       });
     });
   }
@@ -52,7 +51,13 @@ class _MapPageState extends State<MapPage> {
       future: _getCurrentPosition(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
+          return Center(
+            child: Image.asset(
+              'assets/gifs/map.gif',
+              width: 300,
+              height: 300,
+            )
+          );
         } else if (snapshot.hasError) {
           return Center(child: Text('Error: ${snapshot.error}'));
         } else {

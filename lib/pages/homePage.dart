@@ -94,6 +94,7 @@ class _HomePageState extends State<HomePage> {
       Permission.bluetoothScan,
       Permission.nearbyWifiDevices,
       Permission.storage,
+      Permission.notification,
     ].request();
   }
 

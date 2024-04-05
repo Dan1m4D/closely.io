@@ -2,6 +2,13 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "Redmi Note 7",
+            "type": "dart",
+            "request": "launch",
+            "flutterMode": "release",
+            "deviceId": "c96bcc55"
+        },
+        {
             "name": "a41",
             "type": "dart",
             "request": "launch",
@@ -23,7 +30,8 @@
             "name": "All",
             "configurations": [
                 "a41",
-                "a54"
+                "a54",
+                "Redmi Note 7"
             ]
         }
     ]
